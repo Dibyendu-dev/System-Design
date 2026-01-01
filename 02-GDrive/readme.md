@@ -248,3 +248,84 @@ User → CDN (cache hit)
 ![G-D](snaps/G2.png)
 
 ---
+
+### 4.3 🔗 File Sharing Flow
+
+#### 🗂️ Where should file sharing information live?
+- Store sharing info only in metadata DB
+- Store sharing info in cache
+- Create a separate shares table / collection
+
+#### Option 1️⃣ Store sharing info inside file metadata (Embedded)
+```
+{
+  "fileId": "f1",
+  "ownerId": "u1",
+  "sharedWith": [
+    { "userId": "u2", "permission": "view" },
+    { "userId": "u3", "permission": "edit" }
+  ]
+}
+
+```
+##### ✅ Pros
+- Simple
+- Single read for file + permissions
+- Works for small sharing lists
+
+##### ❌ Cons (BIG ones)
+- Document size grows unbounded
+- One file shared with 10k users → hot document
+- High write contention
+- Hard to query:
+
+##### 📌 Verdict: ❌ Not suitable at scale
+
+#### Option 2️⃣ Store sharing info only in cache (Redis)
+
+##### ✅ Pros
+- Extremely fast permission checks
+- Low latency
+
+##### ❌ Cons (Critical)
+- Cache is not source of truth
+- Data loss on eviction / restart
+- Hard to ensure consistency
+- Revocation becomes risky
+##### 📌 Verdict: ❌ Never store sharing info only in cache
+
+#### Option 3️⃣ Separate Shares / Permissions Table
+```
+{
+  "fileId": "f1",
+  "sharedWithUserId": "u2",
+  "permission": "view",
+  "sharedBy": "u1",
+  "expiresAt": null
+}
+
+```
+
+##### ✅ Pros
+
+- Scales to millions of shares
+
+- Efficient queries:
+
+- Files shared with user X
+
+- All users having access to file Y
+
+- Easy revocation
+
+- No hot metadata document
+
+- Clean separation of concerns
+
+##### ❌ Cons
+
+- Requires join / multiple reads
+
+- Slightly more complex
+
+##### 📌 Verdict: ✅ Industry-standard design
