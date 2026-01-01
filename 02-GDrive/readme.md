@@ -180,3 +180,71 @@ This is done using a **pre-signed URL**.
 
 ---
 ![G-D](snaps/G2.png)
+
+## 4.2 📥 File Download Flow
+### Core Question
+#### Should users download files via:
+ - Primary application server
+ - Blob/Object storage
+ - CDN in front of blob storage
+
+## Option 1️⃣ User → Primary Server → File
+``` 
+User → API Server → File Storage → API Server → User
+```
+#### ✅ Pros
+- Easy to implement
+- Centralized access control
+
+#### ❌ Cons
+- Server bandwidth bottleneck
+- Poor scalability for large files (GBs)
+- High latency
+- Expensive infra
+- Server failure affects downloads
+
+#### 📌 Verdict:  ❌ Never used in real cloud-scale file systems
+
+## Option 2️⃣ User → Blob Storage
+```
+User → API (auth + metadata)
+     → receives pre-signed download URL
+User → Blob Storage (download)
+
+```
+
+#### ✅ Pros
+- High throughput
+- Supports huge files (100GB+)
+- No load on API servers
+- Secure via time-limited URLs
+
+#### ❌ Cons
+- Latency depends on user’s distance from storage region
+- Repeated downloads hit storage repeatedly
+
+#### 📌 Verdict:✅ Good, but can be improved
+
+## Option 3️⃣ User → CDN → Blob Storage
+```
+User → API (auth)
+     → gets signed CDN URL
+User → CDN (cache hit)
+        ↓ cache miss
+      Blob Storage
+
+```
+#### ✅ Pros
+- Lowest latency (edge locations)
+- Massive scalability
+- Reduced blob storage cost
+- High availability
+- Ideal for shared files
+
+#### ❌ Cons
+- Slightly complex setup
+- Cache invalidation complexity (versioning needed)
+#### 📌 Verdict: ✅ Industry standard
+![G-D](snaps/G2.png)
+
+---
