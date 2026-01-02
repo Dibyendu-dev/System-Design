@@ -310,11 +310,9 @@ User → CDN (cache hit)
 
 - Scales to millions of shares
 
-- Efficient queries:
+- Efficient queries
 
-- Files shared with user X
-
-- All users having access to file Y
+- All users having access to file 
 
 - Easy revocation
 
@@ -329,3 +327,131 @@ User → CDN (cache hit)
 - Slightly more complex
 
 ##### 📌 Verdict: ✅ Industry-standard design
+
+### 4.4 🔄 File Sync Across Devices
+####  Approach
+
+- Sync must be bi-directional
+![G-D](snaps/G4.png)
+
+#### ✅ Final Conclusion
+##### File sync MUST be bi-directional Best approach = Hybrid model
+- WebSockets for recent changes
+- Polling for stale/offline recovery
+- Versioning for conflict resolution
+![G-D](snaps/G5.png)
+
+---
+
+#### 5.1 How can we support large files
+
+![G-D](snaps/G6.png)
+
+---
+
+#### 5.2 How to keep chunk in sync with storage bucket
+
+![G-D](snaps/G7.png)
+
+---
+
+#### 5.3 How to make upload download and syncing fast
+##### Core Principle
+
+- Move bytes as close to the user as possible
+- Move metadata as little as possible
+
+###### ✅ Direct-to-Storage Uploads
+###### ✅ Parallel Chunk Uploads
+
+- Split file into chunks (8–64 MB)
+
+- Upload multiple chunks in parallel
+###### ✅ Resume Instead of Restart
+
+- Resume from last uploaded chunk
+
+- No wasted re-uploads
+###### ✅ CDN in Front of Storage
+
+###### ✅ HTTP Range Requests
+
+- Download file in parts
+
+- Resume interrupted downloads
+
+###### ✅ Aggressive Caching
+
+- Cache file lists
+
+- Cache permissions
+
+- Cache version info
+###### ✅ Delta Sync (Only What Changed)
+
+- Sync only changed blocks
+
+- Not entire file
+
+![G-D](snaps/G8.png)
+
+---
+
+#### 5.4 How to ensure file security
+###### Core Security Principle
+
+- Never trust the client
+- Never expose storage directly
+- Security is enforced at metadata + access layers, not by storage alone
+
+##### 1️⃣ Identity & Authentication (Who are you?)
+✅ Strong authentication
+-	OAuth / SSO
+-	Short-lived access tokens
+-	Device-bound sessions
+-   API servers are the only gatekeepers.
+
+##### 2️⃣ Authorization (What can you do?)
+Permission checks BEFORE every action 
+(userId, fileId, action) → allow / deny
+- 	Owner / Editor / Viewer roles
+- 	Separate shares / permissions table
+- 	No permission → no signed URL
+
+##### 3️⃣ Secure Uploads
+Signed Upload URLs (Time-Limited)
+Used with:
+- 	Amazon S3
+- 	Google Cloud Storage
+##### Properties:
+- 	Expires in minutes
+- 	Single object scope
+- 	Size & content-type restricted
+##### Prevents:
+- 	Bucket scraping
+- 	Unauthorized uploads
+- 	Replay attacks
+________________________________________
+##### 4️⃣ Secure Downloads
+Signed Download URLs
+Auth check → signed URL → CDN / Blob
+- 	Short expiry
+- 	Optional IP / device binding
+- 	Revoked access = URL expiry
+Used with:
+- 	Amazon CloudFront
+- 	Cloudflare
+________________________________________
+###### 5️⃣ Encryption (At Rest & In Transit)
+In Transit
+- 	TLS everywhere (HTTPS, WSS)
+At Rest
+- 	Server-side encryption (AES-256)
+- 	Per-object encryption keys
+- 	Key rotation
+Optional:
+- 	Customer-managed keys (KMS)
+________________________________________
+
+
+![G-D](snaps/G9.png)
