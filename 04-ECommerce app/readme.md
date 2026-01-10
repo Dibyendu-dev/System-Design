@@ -57,3 +57,10 @@
 ```
     GET /v1/orders/{orderId}
 ```
+
+## High level user flow
+![F-D](snaps/f2.png)
+
+## High level design
+![F-D](snaps/f3.png)
+
